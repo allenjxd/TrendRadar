@@ -428,19 +428,19 @@ ai:
   temperature: 1.0                  # 采样温度 (0.0-2.0)
                                     # 注意：部分模型(如 gpt-5)可能要求必须为 1.0，否则会报错
   
-  max_tokens: 5000                  # 最大生成 token 数
+  max_tokens: 16000                 # 最大生成 token 数（含思考 token）
+                                    # MiniMax-M3.1-Flash 默认深度思考会占用额度，过小会返回空内容
                                     # 注意：如果 API 不支持此参数(报 HTTP 400)，请设为 0 以禁用发送
   # 高级选项
   num_retries: 1                    # 失败重试次数
   fallback_models: []               # 备用模型列表（可选）
                                     # 示例: ["openai/gpt-4o-mini", "openai/deepseek-ai/DeepSeek-V3"]
 
-  # 额外参数（一般无需修改，删掉 # 号即可启用）
-  # 会原样透传给 LiteLLM，可用于补充请求参数或自定义请求头
-  # extra_params:
-  #   top_p: 1.0
-  #   presence_penalty: 0.0
-  #   stop: ["END"]
+  # 额外参数会原样透传给 LiteLLM
+  # MiniMax-M3.1-Flash 思考无法关闭，默认 effort=max，容易把 max_tokens 花光后返回空正文
+  extra_params:
+    output_config:
+      effort: "low"
 
 
 # ===============================================================
