@@ -209,6 +209,63 @@ presets:
 
 
   # ───────────────────────────────────────────────────────────
+  # 2.5️⃣ morning_digest - 早间汇总 + 白天当前榜单
+  #
+  # 早上生成当日汇总和 AI 分析，白天更新当前筛选后的热榜。
+  # 适合：GitHub Pages 网页报告（无推送渠道时同样适用）
+  #
+  # 早间汇总 08:00-10:00：推送 ✓ | AI分析 ✓ | 当日汇总，窗口内一次
+  # 白天默认：推送 ✓ | AI分析 ✓ | 当前榜单
+  # 夜间 23:00-07:30：只采集，不分析、不推送
+  # ───────────────────────────────────────────────────────────
+  morning_digest:
+    name: "早间汇总"
+    description: "早上做当日汇总和 AI 分析，白天更新当前榜单。"
+
+    default:
+      collect: true
+      analyze: true
+      ai_mode: "current"
+      push: true
+      report_mode: "current"
+      once:
+        analyze: false
+        push: false
+
+    periods:
+      morning_summary:
+        name: "早间汇总"
+        start: "08:00"
+        end: "10:00"
+        analyze: true
+        ai_mode: "daily"
+        report_mode: "daily"
+        once:
+          analyze: true
+          push: true
+      late_night:
+        name: "夜间静默"
+        start: "23:00"
+        end: "07:30"
+        collect: true
+        analyze: false
+        push: false
+
+    day_plans:
+      all_day:
+        periods: ["morning_summary", "late_night"]
+
+    week_map:
+      1: "all_day"
+      2: "all_day"
+      3: "all_day"
+      4: "all_day"
+      5: "all_day"
+      6: "all_day"
+      7: "all_day"
+
+
+  # ───────────────────────────────────────────────────────────
   # 3️⃣ office_hours - 办公时间推送
   #
   # 工作日三段式推送，周末增量自由推。

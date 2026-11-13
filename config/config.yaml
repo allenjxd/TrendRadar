@@ -40,8 +40,8 @@ app:
 # 详细时间线图请查看 config/timeline.yaml
 # ===============================================================
 schedule:
-  enabled: false                        # 是否启用调度系统（true=启用, false=关闭，默认关闭）
-  preset: "morning_evening"             # 预设模板名称（见上方说明）
+  enabled: true                         # 是否启用调度系统（true=启用, false=关闭，默认关闭）
+  preset: "morning_digest"              # 早间当日汇总 + 白天当前榜单
 
 
 # ===============================================================
@@ -99,6 +99,33 @@ platforms:
     - id: "zhihu"
       name: "知乎"
       expected_domain: "zhihu.com"
+    - id: "ithome"
+      name: "IT之家"
+      expected_domain: "ithome.com"
+    - id: "sspai"
+      name: "少数派"
+      expected_domain: "sspai.com"
+    - id: "juejin"
+      name: "掘金"
+      expected_domain: "juejin.cn"
+    - id: "v2ex"
+      name: "V2EX"
+      expected_domain: "v2ex.com"
+    - id: "github"
+      name: "GitHub Trending"
+      expected_domain: "github.com"
+    - id: "producthunt"
+      name: "Product Hunt"
+      expected_domain: "producthunt.com"
+    - id: "36kr-renqi"
+      name: "36氪热门"
+      expected_domain: "36kr.com"
+    - id: "jin10"
+      name: "金十数据"
+      expected_domain: "jin10.com"
+    - id: "aihot"
+      name: "AI 热点"
+      expected_domain: "aihot.news"
 
 
 
@@ -131,15 +158,23 @@ rss:
       name: "Hacker News"
       url: "https://hnrss.org/frontpage"
 
-    - id: "ruanyifeng"
-      name: "阮一峰的网络日志"
-      url: "http://www.ruanyifeng.com/blog/atom.xml"
-      enabled: false                  # 禁用
-      # max_age_days: 3               # 示例：推送 3 天内的文章（更新较慢的博客）
-     
-    - id: "yahoo-finance"
-      name: "雅虎财经"
-      url: "https://finance.yahoo.com/news/rssindex"
+    - id: "the-block"
+      name: "The Block"
+      url: "https://www.theblock.co/rss.xml"
+
+    - id: "coindesk"
+      name: "CoinDesk"
+      url: "https://www.coindesk.com/arc/outboundfeeds/rss/"
+
+    - id: "vitalik"
+      name: "Vitalik Buterin"
+      url: "https://vitalik.eth.limo/feed.xml"
+      max_age_days: 14
+
+    - id: "cursor-changelog"
+      name: "Cursor Changelog"
+      url: "https://cursor.com/changelog/rss.xml"
+      max_age_days: 14
 
     # 自定义源示例
     # - id: "custom-feed"
@@ -175,7 +210,7 @@ report:
 # 4.5 筛选策略
 # ===============================================================
 filter:
-  method: "keyword"                     # 筛选方式（二选一）
+  method: "ai"                          # 筛选方式（二选一）
                                        # keyword = 关键词匹配，不调用 AI，不消耗 token，但规则固定
                                        #           词组定义在 config/frequency_words.txt
                                        # ai = AI 智能分类，更灵活但每次运行消耗 token
@@ -193,8 +228,8 @@ ai_filter:
   batch_size: 200                         # 每批发送给 AI 的标题数，超过此数量自动分批
   batch_interval: 2                       # 分批间隔（秒），避免触发 API 限流，0=不等待
 
-  min_score: 0.7                          # 推送最低分数阈值（0.0~1.0），值越高越严格
-                                          # 推荐 0.5~0.7 起步，0=不过滤
+  min_score: 0.6                          # 推送最低分数阈值（0.0~1.0），值越高越严格
+                                          # 当前版本为 0~1 分制；0.6 约等于较严格的相关门槛
 
   # 兴趣描述文件（默认 config/ai_interests.txt，无需配置）
   # 自定义文件放入 config/custom/ai/ 目录，然后指定文件名：
@@ -260,8 +295,8 @@ display:
 #    配对项（如 Telegram token 和 chat_id）数量必须一致
 # ===============================================================
 notification:
-  enabled: true                       # 是否启用通知功能（true=启用, false=关闭）—— 总开关
-                                      # 开启 schedule 后此项仍为总开关：false=永远不推送，true=由调度控制
+  enabled: false                      # 是否启用通知功能（true=启用, false=关闭）—— 总开关
+                                      # 暂不配置推送渠道，只发布 GitHub Pages 网页报告
 
   # 推送渠道配置
   channels:
@@ -363,11 +398,11 @@ ai:
   # 完整列表: https://docs.litellm.ai/docs/providers
   # 如果你对于看英文文档比较头疼，那么可以点击页面右下角的 【Ask AI】 ,用中文询问怎么配置
 
-  model: "deepseek/deepseek-v4-flash"
+  model: "anthropic/MiniMax-M3.1-Flash"
 
   api_key: ""                       # API Key（建议使用环境变量 AI_API_KEY）
   
-  api_base: ""                      # 自定义 API 地址（可选，绝大多数情况留空即可）
+  api_base: "https://api.minimax.cn/anthropic/"  # MiniMax Anthropic 兼容地址（LiteLLM 需要末尾斜杠）
                                     #
                                     # ❓ 什么时候需要填？
                                     #    当你使用的 AI 服务商不在上方支持列表中时。
@@ -425,7 +460,7 @@ ai_analysis:
   max_news_for_analysis: 150        # 参与分析的新闻数量上限（控制 token 成本的关键项）
                                     # 热榜优先占用配额，RSS 用剩余配额，独立展示区不受此限制
 
-  include_rss: false                # 是否包含 RSS 内容进行分析（true=包含, false=不包含）
+  include_rss: true                 # 是否包含 RSS 内容进行分析（true=包含, false=不包含）
   include_standalone: true          # 是否纳入独立展示区数据（true=纳入, false=不纳入）
 
   include_rank_timeline: true       # 排名时间线详细程度

@@ -35,7 +35,9 @@ on:
     #   "15 * * * *"     → 每小时第15分钟 / minute 15 every hour
     #   "30 0-14 * * *"  → 北京时间 8:00-22:00 每小时第30分钟 / Beijing 8am-10pm
     #
-    - cron: "33 * * * *"
+    # 北京时间 08:15-22:15 每 2 小时一次（UTC 00-14，间隔 2 小时）
+    # Beijing 08:15-22:15 every 2 hours
+    - cron: "15 0-14/2 * * *"
 
   workflow_dispatch:
 
@@ -46,6 +48,8 @@ concurrency:
 permissions:
   contents: read
   actions: write
+  pages: write
+  id-token: write
 
 jobs:
   crawl:
@@ -213,3 +217,29 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy cloudflare_dist --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME }}
+
+      - name: Prepare GitHub Pages assets
+        if: success()
+        run: |
+          if [ ! -f index.html ]; then
+            echo "❌ 未找到 index.html，请确认爬虫已生成网页报告"
+            exit 1
+          fi
+          rm -rf pages_dist
+          mkdir -p pages_dist
+          cp index.html pages_dist/index.html
+
+      - name: Setup GitHub Pages
+        if: success()
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        if: success()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages_dist
+
+      - name: Deploy to GitHub Pages
+        if: success()
+        id: deployment
+        uses: actions/deploy-pages@v4
