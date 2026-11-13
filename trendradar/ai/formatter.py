@@ -298,12 +298,18 @@ def render_ai_analysis_html_rich(result: AIAnalysisResult) -> str:
                     <div class="ai-warning">AI 分析失败: {_escape_html(str(error_msg))}</div>
                 </div>"""
 
-    ai_html = """
-                <div class="ai-section">
-                    <div class="ai-section-header">
-                        <div class="ai-section-title">✨ AI 热点分析</div>
+    teaser = ""
+    if result.core_trends:
+        first_line = result.core_trends.strip().splitlines()[0].strip()
+        teaser = first_line[:80] + ("…" if len(first_line) > 80 else "")
+
+    ai_html = f"""
+                <details class="ai-section" open>
+                    <summary class="ai-section-header">
+                        <span class="ai-section-title">✨ AI 热点分析</span>
                         <span class="ai-section-badge">AI</span>
-                    </div>
+                        {f'<span class="ai-teaser">{_escape_html(teaser)}</span>' if teaser else ""}
+                    </summary>
                     <div class="ai-blocks-grid">"""
 
     if result.core_trends:
@@ -356,12 +362,12 @@ def render_ai_analysis_html_rich(result: AIAnalysisResult) -> str:
         if summaries_text:
             summaries_html = _escape_html(summaries_text).replace("\n", "<br>")
             ai_html += f"""
-                    <div class="ai-block">
-                        <div class="ai-block-title">独立源点速览</div>
+                    <details class="ai-block ai-standalone">
+                        <summary>独立源点速览</summary>
                         <div class="ai-block-content">{summaries_html}</div>
-                    </div>"""
+                    </details>"""
 
     ai_html += """
                     </div>
-                </div>"""
+                </details>"""
     return ai_html

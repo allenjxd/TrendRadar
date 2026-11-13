@@ -261,11 +261,11 @@ display:
   # 调整顺序：剪切粘贴整行即可
   # 要显示某个区域，需同时：1. 在此列表中  2. 下方 regions 对应开关为 true
   region_order:
-    - new_items                           # 1️⃣ 新增热点区域
+    - ai_analysis                         # 1️⃣ AI 分析（放到页面最上方）
     - hotlist                             # 2️⃣ 热榜区域（关键词匹配 / AI 智能筛选）
     - rss                                 # 3️⃣ RSS 订阅区域
-    - standalone                          # 4️⃣ 独立展示区
-    - ai_analysis                         # 5️⃣ AI 分析区域
+    - new_items                           # 4️⃣ 新增热点区域（当前已关闭，避免与 RSS 重复）
+    - standalone                          # 5️⃣ 独立展示区（当前已关闭）
 
   # 推送区域开关（需配合上方 region_order 使用）
   regions:

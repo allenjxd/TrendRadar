@@ -10,7 +10,27 @@ from typing import Any, Dict, List, Optional, Callable
 
 from trendradar.report.helpers import html_escape, calculate_rank_trend
 from trendradar.utils.time import convert_time_for_display
+
 from trendradar.ai.formatter import render_ai_analysis_html_rich
+
+
+# How many titles to show in each tag/RSS/standalone group before folding the rest.
+HTML_GROUP_PREVIEW_LIMIT = 8
+
+
+def _join_with_overflow(item_htmls: List[str], limit: int = HTML_GROUP_PREVIEW_LIMIT) -> str:
+    """Show the first `limit` items; put the remainder in a collapsed <details>."""
+    if not item_htmls:
+        return ""
+    if len(item_htmls) <= limit:
+        return "".join(item_htmls)
+    rest = len(item_htmls) - limit
+    return (
+        "".join(item_htmls[:limit])
+        + f'<details class="more-items"><summary>还有 {rest} 条</summary>'
+        + "".join(item_htmls[limit:])
+        + "</details>"
+    )
 
 
 def render_html_content(
@@ -1409,28 +1429,162 @@ def render_html_content(
             body.dark-mode .badge-new {
                 background: linear-gradient(135deg, #be185d, #9333ea);
             }
+            /* —— Compact layout (personal report) —— */
+            body {
+                padding: 8px;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+            .container { border-radius: 8px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); }
+            .header {
+                background: #111827;
+                color: #f9fafb;
+                padding: 8px 12px;
+                text-align: left;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                min-height: 40px;
+                overflow: visible;
+            }
+            .header-watermark,
+            .header-title,
+            .header-info { display: none !important; }
+            .header-slim-meta {
+                font-size: 13px;
+                font-weight: 500;
+                letter-spacing: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                flex: 1;
+                min-width: 0;
+                position: relative;
+                z-index: 2;
+            }
+            .save-buttons {
+                position: static;
+                top: auto;
+                right: auto;
+                margin: 0;
+                width: auto;
+                justify-content: flex-end;
+                flex-shrink: 0;
+                gap: 6px;
+            }
+            .save-btn,
+            .save-dropdown-trigger,
+            .toggle-wide-btn,
+            .toggle-dark-btn {
+                padding: 4px 8px;
+                min-height: 28px;
+                font-size: 12px;
+            }
+            .content { padding: 12px 14px; }
+            .search-bar { margin-bottom: 10px; }
+            .word-group { margin-bottom: 16px; }
+            .word-header { margin-bottom: 8px; padding-bottom: 4px; }
+            .word-name { font-size: 15px; }
+            .news-item { margin-bottom: 0; padding: 7px 0; gap: 8px; }
+            .news-header { margin-bottom: 2px; gap: 6px; }
+            .news-title { font-size: 14px; line-height: 1.35; }
+            .news-number {
+                width: 20px;
+                height: 20px;
+                min-width: 20px;
+                margin-top: 2px;
+                font-size: 11px;
+            }
+            .news-content { padding-right: 8px; }
+            .news-item.new .news-content { padding-right: 36px; }
+            .rss-section { margin-top: 16px; padding-top: 12px; }
+            .rss-section-header { margin-bottom: 10px; }
+            .rss-section-title { font-size: 16px; }
+            .feed-group { margin-bottom: 14px; }
+            .feed-header { margin-bottom: 6px; padding-bottom: 4px; }
+            .rss-item { padding: 6px 0; }
+            .ai-section { margin: 0 0 14px; padding: 0; }
+            .ai-section-header {
+                cursor: pointer;
+                list-style: none;
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 8px 0;
+            }
+            .ai-section-header::-webkit-details-marker { display: none; }
+            .ai-section-title { font-size: 16px; }
+            .ai-teaser {
+                flex: 1 1 100%;
+                font-size: 12px;
+                font-weight: 400;
+                opacity: 0.75;
+                line-height: 1.35;
+            }
+            .ai-block { padding: 8px 10px; margin-bottom: 8px; }
+            .ai-block-title { font-size: 13px; margin-bottom: 4px; }
+            .ai-block-content { font-size: 13px; line-height: 1.45; }
+            .ai-standalone { margin-top: 4px; }
+            .ai-standalone > summary {
+                cursor: pointer;
+                font-size: 13px;
+                padding: 6px 0;
+                color: #4f46e5;
+            }
+            .footer { margin-top: 16px; padding: 10px 12px; }
+            .footer-content { font-size: 12px; }
+            .error-section { margin: 0 0 10px; padding: 0; }
+            .error-section.compact-error > summary {
+                cursor: pointer;
+                font-size: 13px;
+                color: #b45309;
+                padding: 4px 0;
+            }
+            details.more-items {
+                margin: 2px 0 0;
+                padding: 0;
+                border-top: 1px solid #f0f0f0;
+            }
+            details.more-items > summary {
+                cursor: pointer;
+                font-size: 13px;
+                color: #4f46e5;
+                padding: 8px 0;
+                list-style: none;
+            }
+            details.more-items > summary::-webkit-details-marker { display: none; }
+            body.dark-mode .header { background: #0f172a; }
+            body.dark-mode .ai-standalone > summary,
+            body.dark-mode details.more-items > summary { color: #a5b4fc; }
+            body.dark-mode details.more-items { border-top-color: #334155; }
+            body.dark-mode .ai-teaser { opacity: 0.65; }
+            @media (max-width: 480px) {
+                body { padding: 6px; }
+                .header { padding: 7px 10px; }
+                .content { padding: 10px; }
+                .header-info { display: none !important; }
+                .save-buttons {
+                    position: static;
+                    margin: 0;
+                    width: auto;
+                    display: flex;
+                    justify-content: flex-end;
+                }
+                .save-btn-group { flex: 0 0 auto; }
+                .save-btn { width: auto; }
+                .news-content { padding-right: 8px; }
+                .tab-bar { gap: 4px; }
+            }
         </style>
+
     </head>
     <body>
         <div class="reading-progress"></div>
         <div class="container">
-            <div class="header">
-                <div class="header-watermark">TrendRadar</div>
-                <div class="save-buttons">
-                    <button class="toggle-wide-btn" onclick="toggleWideMode()" title="切换宽屏/窄屏">⛶</button>
-                    <button class="toggle-dark-btn" onclick="toggleDarkMode()" title="切换暗色/亮色">☽</button>
-                    <div class="save-btn-group">
-                        <button class="save-btn" onclick="saveAsImage(event)">导出</button>
-                        <button class="save-dropdown-trigger">▾</button>
-                        <div class="save-dropdown-menu">
-                            <button class="save-dropdown-item" onclick="saveAsImage(event)"><svg class="dropdown-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="8" cy="7.5" r="2.5"/><path d="M12 4h.01"/></svg>整页截图</button>
-                            <button class="save-dropdown-item" onclick="saveAsMultipleImages(event)"><svg class="dropdown-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="10" height="10" rx="1.5"/><path d="M5 4V2.5A1.5 1.5 0 016.5 1h7A1.5 1.5 0 0115 2.5v7a1.5 1.5 0 01-1.5 1.5H12"/></svg>分段截图</button>
-                            <button class="save-dropdown-item" onclick="saveAsMarkdown()"><svg class="dropdown-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2h11A1.5 1.5 0 0115 3.5v9a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 12.5v-9A1.5 1.5 0 012.5 2z"/><path d="M4 11V5l2.5 3L9 5v6"/><path d="M11.5 8v3m0 0l-1.5-2m1.5 2l1.5-2"/></svg>Markdown</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="header-title">热点新闻分析</div>
-                <div class="header-info">"""
+            <div class="header" id="report-header">
+"""
 
     # 使用提供的时间函数或默认 datetime.now
     if get_time_func:
@@ -1461,98 +1615,23 @@ def render_html_content(
     rss_source_failed = report_data.get("rss_source_failed", 0)
     rss_source_success = max(0, rss_source_total - rss_source_failed)
 
-    # 1. 报告类型
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">报告类型</span>
-                        <span class="info-value">{mode_display}</span>
-                    </div>"""
-
-    # 2. 生成时间
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">生成时间</span>
-                        <span class="info-value">{now.strftime("%m-%d %H:%M")}</span>
-                    </div>"""
-
-    # 3. 热榜命中
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">热榜命中</span>
-                        <span class="info-value">{hot_news_count} / {hotlist_total}</span>
-                    </div>"""
-
-    # 4. RSS 命中
-    if rss_source_total > 0:
-        rss_value = f"{rss_matched} / {rss_total}"
-    else:
-        rss_value = "未启用"
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">RSS 命中</span>
-                        <span class="info-value">{rss_value}</span>
-                    </div>"""
-
-    # 5. 热榜平台
-    if platform_total > 0:
-        platform_value = f"{platform_success}/{platform_total}"
-    else:
-        platform_value = "--"
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">热榜平台</span>
-                        <span class="info-value">{platform_value}</span>
-                    </div>"""
-
-    # 6. RSS 源
-    if rss_source_total > 0:
-        rss_source_value = f"{rss_source_success}/{rss_source_total}"
-    else:
-        rss_source_value = "--"
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">RSS 源</span>
-                        <span class="info-value">{rss_source_value}</span>
-                    </div>"""
-
-    # 7. 新增热点（热榜新增 + RSS 新增）
-    rss_new_count = sum(len(stat.get("titles", [])) for stat in (rss_new_items or []))
-    total_new = new_count + rss_new_count
-    new_value = f"{new_count} + {rss_new_count}" if total_new > 0 else "0"
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">新增热点</span>
-                        <span class="info-value">{new_value}</span>
-                    </div>"""
-
-    # 8. AI 分析
-    if ai_analysis and getattr(ai_analysis, "success", False):
-        hotlist_analyzed = getattr(ai_analysis, "hotlist_analyzed", 0)
-        rss_analyzed = getattr(ai_analysis, "rss_analyzed", 0)
-        standalone_analyzed = getattr(ai_analysis, "standalone_analyzed", 0)
-        ai_include_rss = getattr(ai_analysis, "include_rss", True)
-        ai_include_standalone = getattr(ai_analysis, "include_standalone", False)
-
-        ai_parts = [str(hotlist_analyzed)]
-        if ai_include_rss:
-            ai_parts.append(str(rss_analyzed))
-        if ai_include_standalone:
-            ai_parts.append(str(standalone_analyzed))
-        ai_value = " + ".join(ai_parts) if sum(int(p) for p in ai_parts) > 0 else "0"
-    elif ai_analysis:
-        if getattr(ai_analysis, "skipped", False):
-            ai_value = "已跳过"
-        else:
-            ai_value = "待配置"
-    else:
-        ai_value = "未启用"
-    html += f"""
-                    <div class="info-item">
-                        <span class="info-label">AI 分析</span>
-                        <span class="info-value">{ai_value}</span>
-                    </div>"""
-
-    html += """
+    # Slim header: keep only the update time, plus compact toolbar buttons.
+    html += (
+        '                <div class="header-slim-meta">TrendRadar · 更新于 '
+        + now.strftime("%m-%d %H:%M")
+        + """</div>
+                <div class="save-buttons">
+                    <button class="toggle-wide-btn" onclick="toggleWideMode()" title="切换宽屏/窄屏">⛶</button>
+                    <button class="toggle-dark-btn" onclick="toggleDarkMode()" title="切换暗色/亮色">☽</button>
+                    <div class="save-btn-group">
+                        <button class="save-btn" onclick="saveAsImage(event)">导出</button>
+                        <button class="save-dropdown-trigger">▾</button>
+                        <div class="save-dropdown-menu">
+                            <button class="save-dropdown-item" onclick="saveAsImage(event)"><svg class="dropdown-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="8" cy="7.5" r="2.5"/><path d="M12 4h.01"/></svg>整页截图</button>
+                            <button class="save-dropdown-item" onclick="saveAsMultipleImages(event)"><svg class="dropdown-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="10" height="10" rx="1.5"/><path d="M5 4V2.5A1.5 1.5 0 016.5 1h7A1.5 1.5 0 0115 2.5v7a1.5 1.5 0 01-1.5 1.5H12"/></svg>分段截图</button>
+                            <button class="save-dropdown-item" onclick="saveAsMarkdown()"><svg class="dropdown-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 2h11A1.5 1.5 0 0115 3.5v9a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 011 12.5v-9A1.5 1.5 0 012.5 2z"/><path d="M4 11V5l2.5 3L9 5v6"/><path d="M11.5 8v3m0 0l-1.5-2m1.5 2l1.5-2"/></svg>Markdown</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1560,18 +1639,20 @@ def render_html_content(
                 <div class="search-bar">
                     <input type="text" class="search-input" placeholder="搜索新闻标题..." oninput="handleSearch(this.value)">
                 </div>"""
+    )
 
     # 处理失败ID错误信息
     if report_data["failed_ids"]:
-        html += """
-                <div class="error-section">
-                    <div class="error-title">⚠️ 请求失败的平台</div>
+        failed_n = len(report_data["failed_ids"])
+        html += f"""
+                <details class="error-section compact-error">
+                    <summary class="error-title">⚠️ 请求失败的平台（{failed_n}）</summary>
                     <ul class="error-list">"""
         for id_value in report_data["failed_ids"]:
             html += f'<li class="error-item">{html_escape(id_value)}</li>'
         html += """
                     </ul>
-                </div>"""
+                </details>"""
 
     # 生成热点词汇统计部分的HTML
     stats_html = ""
@@ -1613,11 +1694,12 @@ def render_html_content(
                     </div>"""
 
             # 处理每个词组下的新闻标题，给每条新闻标上序号
+            item_htmls = []
             for j, title_data in enumerate(stat["titles"], 1):
                 is_new = title_data.get("is_new", False)
                 new_class = "new" if is_new else ""
 
-                stats_html += f"""
+                item_html = f"""
                     <div class="news-item {new_class}">
                         <div class="news-number">{j}</div>
                         <div class="news-content">
@@ -1626,12 +1708,12 @@ def render_html_content(
                 # 根据 display_mode 决定显示来源还是关键词
                 if display_mode == "keyword":
                     # keyword 模式：显示来源
-                    stats_html += f'<span class="source-name">{html_escape(title_data["source_name"])}</span>'
+                    item_html += f'<span class="source-name">{html_escape(title_data["source_name"])}</span>'
                 else:
                     # platform 模式：显示关键词
                     matched_keyword = title_data.get("matched_keyword", "")
                     if matched_keyword:
-                        stats_html += f'<span class="keyword-tag">[{html_escape(matched_keyword)}]</span>'
+                        item_html += f'<span class="keyword-tag">[{html_escape(matched_keyword)}]</span>'
 
                 # 处理排名显示
                 ranks = title_data.get("ranks", [])
@@ -1662,7 +1744,7 @@ def render_html_content(
                     elif trend == "down":
                         trend_html = '<span class="trend-down">📉</span>'
 
-                    stats_html += f'<span class="rank-num {rank_class}">{rank_text}</span>{trend_html}'
+                    item_html += f'<span class="rank-num {rank_class}">{rank_text}</span>{trend_html}'
 
                 # 处理时间显示
                 time_display = title_data.get("time_display", "")
@@ -1673,16 +1755,16 @@ def render_html_content(
                         .replace("[", "")
                         .replace("]", "")
                     )
-                    stats_html += (
+                    item_html += (
                         f'<span class="time-info">{html_escape(simplified_time)}</span>'
                     )
 
                 # 处理出现次数
                 count_info = title_data.get("count", 1)
                 if count_info > 1:
-                    stats_html += f'<span class="count-info">{count_info}次</span>'
+                    item_html += f'<span class="count-info">{count_info}次</span>'
 
-                stats_html += """
+                item_html += """
                             </div>
                             <div class="news-title">"""
 
@@ -1692,15 +1774,17 @@ def render_html_content(
 
                 if link_url:
                     escaped_url = html_escape(link_url)
-                    stats_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
+                    item_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
                 else:
-                    stats_html += escaped_title
+                    item_html += escaped_title
 
-                stats_html += """
+                item_html += """
                             </div>
                         </div>
                     </div>"""
+                item_htmls.append(item_html)
 
+            stats_html += _join_with_overflow(item_htmls)
             stats_html += """
                 </div>"""
 
@@ -1833,6 +1917,7 @@ def render_html_content(
                             <div class="feed-count">{keyword_count} 条</div>
                         </div>"""
 
+            rss_item_htmls = []
             for title_data in titles:
                 item_title = title_data.get("title", "")
                 url = title_data.get("url", "")
@@ -1840,34 +1925,36 @@ def render_html_content(
                 source_name = title_data.get("source_name", "")
                 is_new = title_data.get("is_new", False)
 
-                rss_html += """
+                rss_item = """
                         <div class="rss-item">
                             <div class="rss-meta">"""
 
                 if time_display:
-                    rss_html += f'<span class="rss-time">{html_escape(time_display)}</span>'
+                    rss_item += f'<span class="rss-time">{html_escape(time_display)}</span>'
 
                 if source_name:
-                    rss_html += f'<span class="rss-author">{html_escape(source_name)}</span>'
+                    rss_item += f'<span class="rss-author">{html_escape(source_name)}</span>'
 
                 if is_new:
-                    rss_html += '<span class="rss-author" style="color: #dc2626;">NEW</span>'
+                    rss_item += '<span class="rss-author" style="color: #dc2626;">NEW</span>'
 
-                rss_html += """
+                rss_item += """
                             </div>
                             <div class="rss-title">"""
 
                 escaped_title = html_escape(item_title)
                 if url:
                     escaped_url = html_escape(url)
-                    rss_html += f'<a href="{escaped_url}" target="_blank" class="rss-link">{escaped_title}</a>'
+                    rss_item += f'<a href="{escaped_url}" target="_blank" class="rss-link">{escaped_title}</a>'
                 else:
-                    rss_html += escaped_title
+                    rss_item += escaped_title
 
-                rss_html += """
+                rss_item += """
                             </div>
                         </div>"""
+                rss_item_htmls.append(rss_item)
 
+            rss_html += _join_with_overflow(rss_item_htmls)
             rss_html += """
                     </div>"""
 
@@ -1985,6 +2072,7 @@ def render_html_content(
                         </div>"""
 
             # 渲染每个条目（复用 news-item 结构）
+            standalone_item_htmls = []
             for j, item in enumerate(items, 1):
                 title = item.get("title", "")
                 url = item.get("url", "") or item.get("mobileUrl", "")
@@ -1994,7 +2082,7 @@ def render_html_content(
                 last_time = item.get("last_time", "")
                 count = item.get("count", 1)
 
-                standalone_html += f"""
+                s_item = f"""
                         <div class="news-item">
                             <div class="news-number">{j}</div>
                             <div class="news-content">
@@ -2018,7 +2106,7 @@ def render_html_content(
                     else:
                         rank_text = f"{min_rank}-{max_rank}"
 
-                    standalone_html += f'<span class="rank-num {rank_class}">{rank_text}</span>'
+                    s_item += f'<span class="rank-num {rank_class}">{rank_text}</span>'
                 elif rank > 0:
                     if rank <= 3:
                         rank_class = "top"
@@ -2026,22 +2114,22 @@ def render_html_content(
                         rank_class = "high"
                     else:
                         rank_class = ""
-                    standalone_html += f'<span class="rank-num {rank_class}">{rank}</span>'
+                    s_item += f'<span class="rank-num {rank_class}">{rank}</span>'
 
                 # 时间显示（复用 time-info 样式，将 HH-MM 转换为 HH:MM）
                 if first_time and last_time and first_time != last_time:
                     first_time_display = convert_time_for_display(first_time)
                     last_time_display = convert_time_for_display(last_time)
-                    standalone_html += f'<span class="time-info">{html_escape(first_time_display)}~{html_escape(last_time_display)}</span>'
+                    s_item += f'<span class="time-info">{html_escape(first_time_display)}~{html_escape(last_time_display)}</span>'
                 elif first_time:
                     first_time_display = convert_time_for_display(first_time)
-                    standalone_html += f'<span class="time-info">{html_escape(first_time_display)}</span>'
+                    s_item += f'<span class="time-info">{html_escape(first_time_display)}</span>'
 
                 # 出现次数（复用 count-info 样式）
                 if count > 1:
-                    standalone_html += f'<span class="count-info">{count}次</span>'
+                    s_item += f'<span class="count-info">{count}次</span>'
 
-                standalone_html += """
+                s_item += """
                                 </div>
                                 <div class="news-title">"""
 
@@ -2049,15 +2137,17 @@ def render_html_content(
                 escaped_title = html_escape(title)
                 if url:
                     escaped_url = html_escape(url)
-                    standalone_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
+                    s_item += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
                 else:
-                    standalone_html += escaped_title
+                    s_item += escaped_title
 
-                standalone_html += """
+                s_item += """
                                 </div>
                             </div>
                         </div>"""
+                standalone_item_htmls.append(s_item)
 
+            standalone_html += _join_with_overflow(standalone_item_htmls)
             standalone_html += """
                     </div>"""
             group_idx += 1
@@ -2076,13 +2166,14 @@ def render_html_content(
                             <div class="standalone-count">{len(items)} 条</div>
                         </div>"""
 
+            standalone_feed_htmls = []
             for j, item in enumerate(items, 1):
                 title = item.get("title", "")
                 url = item.get("url", "")
                 published_at = item.get("published_at", "")
                 author = item.get("author", "")
 
-                standalone_html += f"""
+                f_item = f"""
                         <div class="news-item">
                             <div class="news-number">{j}</div>
                             <div class="news-content">
@@ -2100,28 +2191,30 @@ def render_html_content(
                     except:
                         time_display = published_at
 
-                    standalone_html += f'<span class="time-info">{html_escape(time_display)}</span>'
+                    f_item += f'<span class="time-info">{html_escape(time_display)}</span>'
 
                 # 作者显示
                 if author:
-                    standalone_html += f'<span class="source-name">{html_escape(author)}</span>'
+                    f_item += f'<span class="source-name">{html_escape(author)}</span>'
 
-                standalone_html += """
+                f_item += """
                                 </div>
                                 <div class="news-title">"""
 
                 escaped_title = html_escape(title)
                 if url:
                     escaped_url = html_escape(url)
-                    standalone_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
+                    f_item += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
                 else:
-                    standalone_html += escaped_title
+                    f_item += escaped_title
 
-                standalone_html += """
+                f_item += """
                                 </div>
                             </div>
                         </div>"""
+                standalone_feed_htmls.append(f_item)
 
+            standalone_html += _join_with_overflow(standalone_feed_htmls)
             standalone_html += """
                     </div>"""
             group_idx += 1
@@ -2166,6 +2259,9 @@ def render_html_content(
         content = region_contents.get(region, "")
         if region == "new_items":
             # 特殊处理 new_items 区域（包含热榜新增和 RSS 新增两部分）
+            # 两者都受 display.regions.new_items 控制，避免和 RSS 订阅区重复拉长页面
+            if not show_new_section:
+                continue
             new_html, rss_new = content
             if new_html:
                 if has_previous_content:
